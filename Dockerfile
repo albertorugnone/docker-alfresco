@@ -2,6 +2,7 @@
 
 FROM centos:centos7
 MAINTAINER Lucas Johnson <lucasejohnson@netscape.net>
+ENV REFRESHED_AT 2017-09-23 05:39:00
 
 # install some necessary/desired RPMs and get updates
 RUN yum update -y && \
@@ -20,17 +21,21 @@ RUN yum update -y && \
                    patch \
                    rsync \
                    supervisor \
-                   wget && \
+                   wget \
+                   dos2unix && \
     yum clean all && rm -rf /tmp/* /var/tmp/* /var/cache/yum/*
+RUN yum install -y nano
 
 # install alfresco
-COPY assets/install_alfresco.sh /tmp/install_alfresco.sh
-RUN /tmp/install_alfresco.sh && \
-    rm -rf /tmp/* /var/tmp/*
-# install mysql connector for alfresco
+COPY ./assets/install_alfresco.sh /tmp/install_alfresco.sh
+
+RUN dos2unix /tmp/install_alfresco.sh && dos2unix /tmp/install_alfresco.sh
+RUN /tmp/install_alfresco.sh
+RUN rm -rf /tmp/* /var/tmp/*
+ install mysql connector for alfresco
 COPY assets/install_mysql_connector.sh /tmp/install_mysql_connector.sh
 RUN /tmp/install_mysql_connector.sh && \
-    rm -rf /tmp/* /var/tmp/*
+rm -rf /tmp/* /var/tmp/*
 # this is for LDAP configuration
 RUN mkdir -p /alfresco/tomcat/shared/classes/alfresco/extension/subsystems/Authentication/ldap/ldap1/
 RUN mkdir -p /alfresco/tomcat/shared/classes/alfresco/extension/subsystems/Authentication/ldap-ad/ldap1/
@@ -42,13 +47,13 @@ ENV ALF_DATA /alfresco/alf_data
 RUN rsync -av $ALF_DATA /alf_data.install/
 
 # adding path file used to disable tomcat CSRF
-COPY assets/disable_tomcat_CSRF.patch /alfresco/disable_tomcat_CSRF.patch
+COPY assets/disable_tomcat_CSRF.patch /alfresco/disable_tomcat_CSRF.patch#
 
 # install scripts
 COPY assets/init.sh /alfresco/init.sh
 COPY assets/supervisord.conf /etc/supervisord.conf
 
-RUN mkdir -p /alfresco/tomcat/webapps/ROOT
+#RUN mkdir -p /alfresco/tomcat/webapps/ROOT
 COPY assets/index.jsp /alfresco/tomcat/webapps/ROOT/
 
 VOLUME /alfresco/alf_data
